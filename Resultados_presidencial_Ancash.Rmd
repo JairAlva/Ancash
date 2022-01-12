@@ -1,0 +1,262 @@
+---
+title: "Mapas Ancash"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+## Ancash ¿La eterna pugna entre la costa y los andes?
+
+
+```{r message=FALSE, warning=FALSE}
+library(maptools)
+library(sf)
+library(tidyverse)
+
+provincias = st_read("C:/Users/Jair Alva/Desktop/Data/Shape-files/Limite_provincial/BAS_LIM_PROVINCIA.shp")
+
+provincias = provincias %>% 
+  filter(FIRST_NOMB == "ANCASH")
+
+plot(st_geometry(provincias))
+```
+
+```{r}
+library(readxl)
+Resultados_presidencia_provincial_2021 <- read_excel("Resultados_presidencia_provincial_2021.xlsx")
+
+```
+
+
+```{r}
+provincias = merge(provincias, Resultados_presidencia_provincial_2021, by.x = "FIRST_IDPR", by.y = "Ubigeo")
+```
+
+
+```{r}
+library(cartogram)
+
+sfno <- st_as_sf(provincias)
+st_crs(sfno)
+
+sfnoproj <- st_transform(sfno, coords = c("lon", "lat"), 
+                        crs = "+proj=longlat +datum=WGS84", 
+                        agr = "constant")
+
+st_crs(sfnoproj)
+
+sfproj <- st_transform(sfno, crs = 24892)
+st_crs(sfproj)
+
+cartograma_base <- cbind(sfproj, st_coordinates(st_centroid(sfproj$geometry)))
+```
+
+Cuando observamos los resultados de las elecciones presidenciales en Ancash, vemos un comportamiento que se repitió hasta las elección del 2016 pero que tiene un giro interesante en la elección del mes pasado. El candidato (o candidata) presidencial que más votos se llevaba en la región tenía el apoyo alectoral más abrumador en las provincias más pobladas que se hubican además en la zona costa de la región. Sin embargo, en las elecciones de abril Perú Libre, el ganador en Ancash, tuvo las victorias más arrazadoras en las provincias más pequeñas y occidentales de la región. 
+```{r}
+library(scales)
+library(ggplot2)
+esc_2006 = cartograma_base %>% 
+  ggplot() +
+  geom_sf(aes(fill=Apra_2006), data = cartograma_base, size=0.3)  +
+  ggtitle("EG 2006") + 
+  scale_fill_distiller(name="Apra (%)", palette = 11, 
+                       limits= c(0, 80), breaks = pretty_breaks(n = 4), 
+                       direction = 1)  +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8)) +
+  geom_point(data= cartograma_base, 
+            aes(x=X, y = Y, size = peso_elec_06), 
+             stroke = F, show.legend = F) +
+  scale_size_continuous(name = "Peso electoral (%)")
+
+esc_2011 = cartograma_base %>% 
+  ggplot() +
+  geom_sf(aes(fill=GP_11), data = cartograma_base, size=0.3) +
+  ggtitle("EG 2011") + 
+  scale_fill_distiller(name="Gana Perú (%)", palette = 8, 
+                       limits= c(0, 80), breaks = pretty_breaks(n = 4), 
+                       direction = 1)  +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8)) +
+  geom_point(data= cartograma_base, 
+            aes(x=X, y = Y, size = peso_elec_11), 
+             stroke = F, show.legend = F) +
+  scale_size_continuous(name = "Peso electoral (%)")
+
+esc_2016 = cartograma_base %>% 
+  ggplot() +
+  geom_sf(aes(fill=FP_16), data = cartograma_base, size=0.3) +
+  ggtitle("EG 2016") + 
+  scale_fill_distiller(name="Fuerza Popular (%)", palette = 7, 
+                       limits= c(0, 80), breaks = pretty_breaks(n = 4), 
+                       direction = 1)  +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8)) +
+  geom_point(data= cartograma_base, 
+            aes(x=X, y = Y, size = peso_elec_16), 
+             stroke = F, show.legend = F) +
+  scale_size_continuous(name = "Peso electoral (%)")
+
+esc_2021 = cartograma_base %>% 
+  ggplot() +
+  geom_sf(aes(fill=Partido.Politico.Nacional.Peru.Libre), 
+          data = cartograma_base, size=0.3) +
+  ggtitle("EG 2021") + 
+  scale_fill_distiller(name="Perú Libre (%)", palette = 8, 
+                       limits= c(0, 80), breaks = pretty_breaks(n = 4), 
+                       direction = 1)  +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8)) +
+  geom_point(data= cartograma_base, 
+            aes(x=X, y = Y, size = peso_elec_21), 
+             stroke = F, show.legend=F) +
+  scale_size_continuous(name = "Peso electoral (%)")
+
+library(ggpubr)
+ggarrange(esc_2006, esc_2011, esc_2016, esc_2021)
+```
+Los circulos negros que se ubican en cada provincia del mapa anterior muestran su peso electoral. De esa manera, al Apra casi le bastó ganar en el Santa (provincia con el círculo más grande) para ser el partido más votado del 2006. 
+
+Puede llavar la idea errada que la victoria es igual en todas las provincias
+
+```{r}
+EG_2006 = provincias %>% 
+  ggplot() +
+  geom_sf(aes(fill=Ganador_06), data = provincias, size=0.3)  +
+  xlab("Longitud") + ylab("Latitud") +
+  ggtitle("EG 2006") + 
+  scale_fill_manual(values = c("red", "pink"))+ 
+  theme_bw() +
+  labs(fill = "") +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8)) 
+
+EG_2011 = provincias %>% 
+  ggplot() +
+  geom_sf(aes(fill=Ganador_11), data = provincias, color='gray', size=0.3)  +
+  ggtitle("EG 2011") + 
+  scale_fill_manual(values = c("orange", "red", "dark green")) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8))+
+  labs(fill = "")
+
+EG_2016 = provincias %>% 
+  ggplot() +
+  geom_sf(aes(fill=Ganador_16), data = provincias, color='gray', size=0.3) +
+  ggtitle("EG 2016") + 
+  scale_fill_manual(values = c("green", "orange", "dark green")) + 
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8))+
+  labs(fill = "")
+
+EG_2021 = provincias %>% 
+  ggplot() +
+  geom_sf(aes(fill=p_ganador_21), data = provincias, color='gray', size=0.3) +
+  ggtitle("EG 2021") + 
+  scale_fill_manual(values = c("blue", "orange", "red")) + 
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks =  element_blank(),
+    axis.title = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_text(size = 8))+
+  labs(fill = "")
+
+library(ggpubr)
+ggarrange(EG_2006, EG_2011, EG_2016, EG_2021)
+```
+Sin embargo, si prestamos atención a los ganadores en cada una de las provincias, se hace evidente el clivaje territorial entre la zona costera y andina de la región. En la costa ancashina ha ganado históricamente un candidato vinculado a la centro derecha. De esta manera, el 2006 ganó Alan García, el candidato que se presentaba como el centro responsable
+
+
+De esta manera, quienes han se han llevado la mayoria de voto en la parte andina, donde se encuentra la capital de la región Huaraz, son aquellos candidatos que presentan un perfil antiestablishment. 
+
+De esta manera, en 2006 Ollanta Humala conquistó casi toda la región, pero luego de moderar su discruso el electorado ancashino se inclinó por la candidatura de Alejandro Toledo. Una figura similar podemos observar en el resultado electoral del 2021. 
+
+Por otro lado, el litoral de la región tiene un comportamiento electoral particular. En la elección del 2006 se inclinó por un candidato moderado. Alan García (2006) se presentaba como el candidato de la centro responsable. En 2011 y 2016 es el fujimorismo el que capitaliza el litoral de Ancash. Aunque es sorprendente que en 2016 Keiko Fujimori logra penetrar hasta la zona andina. En el 2021, APP y Fuerza Popular son asociados como los candidatos de la estabilidad y por eso su apoyo en la costa. 
+
+
+
+
+```{r}
+#2021
+cor.test(provincias$IDH_2019, provincias$`Partido Politico Nacional Peru Libre`)
+
+cor.test(provincias$IDH_2019, provincias$`Fuerza Popular`)
+
+#2016
+cor.test(provincias$IDH_15, provincias$FP_16)
+
+cor.test(provincias$IDH_15, provincias$PP_16)
+
+#2011
+cor.test(provincias$IDH_11, provincias$PP_11)
+
+cor.test(provincias$IDH_11, provincias$F2011_11)
+
+#2006
+cor.test(provincias$IDH_2007, provincias$Apra_2006)
+
+cor.test(provincias$IDH_2007, provincias$UPP_2006)
+```
+
+
+Finalmente, este clivaje costa-andes no es un fenómenos exclusivo de Ancash. De hecho, este patró se repite en otras regiones donde existen provincias costeñas y andinas. Lo que si considero resaltante de Ancash, es que su capital, Huaraz, no es la ciudad más rica de la región por lo que no es encuentra un nicho de derecha conservadora como en las capitales de otras regiones como Arequipa, donde los ganadores fueron Rafael López Aliaga y Hernando de Soto. 

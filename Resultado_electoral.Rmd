@@ -1,0 +1,74 @@
+---
+title: "Resultado-electoral"
+author: "Jair Alva"
+date: "12/1/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(readr)
+library(tidyverse)
+library(sf)
+library(tmap)
+```
+
+```{r}
+segunda_vuelta <- read_delim("D:/OneDrive - pucp.edu.pe/Data/Datos abiertos/Elecciones presidenciales 2021/Segunda vuelta/Resultados_2da_vuelta_Version_PCM .csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
+
+### Resultado para Ancash
+```{r}
+distritos_huaraz <- segunda_vuelta |> filter(PROVINCIA == "HUARAZ") |>  
+  mutate_at(vars(N_CVAS:VOTOS_VN), ~replace_na(.,0)) |> 
+  group_by(UBIGEO, DISTRITO) |> 
+  summarise(across(N_CVAS:VOTOS_VN, sum)) |> 
+  mutate(votos_validos = N_CVAS - VOTOS_VB - VOTOS_VN,
+         prc_Peru_Libre = VOTOS_P1/votos_validos*100,
+         prc_Fuerza_popular = VOTOS_P2/votos_validos*100,
+         prc_participacion = votos_validos/N_ELEC_HABIL*100) |> 
+  select(UBIGEO, DISTRITO, prc_Peru_Libre, prc_Fuerza_popular,
+         prc_participacion)
+```
+
+### Equiparamos los ubigeos
+```{r}
+ubigeos = read_csv("D:/OneDrive - pucp.edu.pe/Data/Datos abiertos/Ubigeos/TB_UBIGEOS.csv")
+
+ubigeos = ubigeos %>% select(ubigeo_reniec, ubigeo_inei, distrito)
+
+distritos_huaraz = distritos_huaraz %>% 
+  left_join(ubigeos, by = c("UBIGEO" = "ubigeo_reniec")) %>% 
+  select(ubigeo_inei, distrito, everything() & !DISTRITO) 
+```
+
+## Mapa de la provincia de Huaraz
+```{r}
+distritos_shp = st_read("D:/OneDrive - pucp.edu.pe/Data/Shape-files/distritos/DISTRITOS.shp")
+```
+
+### Mapa de Huaraz
+```{r}
+huaraz_shp = distritos_shp |> 
+  filter(PROVINCIA == "HUARAZ") |> 
+  left_join(distritos_huaraz, by = c("IDDIST" = "ubigeo_inei")) |> 
+  select(!UBIGEO & !distrito) |> 
+  mutate(DISTRITO = str_to_title(DISTRITO), 
+         nombre = str_c(DISTRITO , " ", round(prc_participacion,2), "%"))
+```
+
+### Mapa de participación
+```{r}
+participacion = tm_shape(huaraz_shp) +
+  tm_polygons("prc_participacion", id= "nombre", border.alpha=0.3, 
+              alpha=0.6, legend.show = F) #, palette="Reds"
+
+participacion
+tmap_mode("view")
+tmap_last()
+#tmap_save(participacion, filename = "participacion.html")
+```
+
