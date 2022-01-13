@@ -9,14 +9,14 @@ editor_options:
 
 ```{r}
 library(readr)
+library(rio)
 library(tidyverse)
 library(sf)
 library(tmap)
 ```
 
 ```{r}
-segunda_vuelta <- read_delim("D:/OneDrive - pucp.edu.pe/Data/Datos abiertos/Elecciones presidenciales 2021/Segunda vuelta/Resultados_2da_vuelta_Version_PCM .csv", 
-    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+segunda_vuelta <- import("https://github.com/JairAlva/Data-Libre/blob/main/Elecciones%20presidenciales%202021/Segunda%20vuelta/Resultados_2d_vuelta.dta?raw=true")
 ```
 
 
@@ -36,7 +36,7 @@ distritos_huaraz <- segunda_vuelta |> filter(PROVINCIA == "HUARAZ") |>
 
 ### Equiparamos los ubigeos
 ```{r}
-ubigeos = read_csv("D:/OneDrive - pucp.edu.pe/Data/Datos abiertos/Ubigeos/TB_UBIGEOS.csv")
+ubigeos = read_csv("https://raw.githubusercontent.com/JairAlva/Data-Libre/main/Ubigeos/TB_UBIGEOS.csv")
 
 ubigeos = ubigeos %>% select(ubigeo_reniec, ubigeo_inei, distrito)
 
@@ -47,7 +47,7 @@ distritos_huaraz = distritos_huaraz %>%
 
 ## Mapa de la provincia de Huaraz
 ```{r}
-distritos_shp = st_read("D:/OneDrive - pucp.edu.pe/Data/Shape-files/distritos/DISTRITOS.shp")
+distritos_shp = st_read("https://raw.githubusercontent.com/JairAlva/Data-Libre/main/Peru_maps/DISTRITOS.json")
 ```
 
 ### Mapa de Huaraz
