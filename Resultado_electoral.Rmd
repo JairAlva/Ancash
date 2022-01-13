@@ -19,30 +19,55 @@ library(tmap)
 segunda_vuelta <- import("https://github.com/JairAlva/Data-Libre/blob/main/Elecciones%20presidenciales%202021/Segunda%20vuelta/Resultados_2d_vuelta.dta?raw=true")
 ```
 
+# Analicemos las provincias de Ancash
 
-### Resultado para Ancash
+### Resultado para distritos de Huaraz
 ```{r}
-distritos_huaraz <- segunda_vuelta |> filter(PROVINCIA == "HUARAZ") |>  
+distritos_ancash <- segunda_vuelta |> filter(DEPARTAMENTO == "ANCASH") |>  
   mutate_at(vars(N_CVAS:VOTOS_VN), ~replace_na(.,0)) |> 
-  group_by(UBIGEO, DISTRITO) |> 
+  group_by(UBIGEO, DISTRITO, PROVINCIA) |> 
   summarise(across(N_CVAS:VOTOS_VN, sum)) |> 
   mutate(votos_validos = N_CVAS - VOTOS_VB - VOTOS_VN,
          prc_Peru_Libre = VOTOS_P1/votos_validos*100,
          prc_Fuerza_popular = VOTOS_P2/votos_validos*100,
          prc_participacion = votos_validos/N_ELEC_HABIL*100) |> 
-  select(UBIGEO, DISTRITO, prc_Peru_Libre, prc_Fuerza_popular,
-         prc_participacion)
+  select(UBIGEO, DISTRITO, PROVINCIA, prc_Peru_Libre, prc_Fuerza_popular,
+         prc_participacion) |> 
+  rename(Provincia = PROVINCIA) |> 
+  mutate(Provincia = str_to_title(Provincia)) |> 
+  ungroup()
+```
+
+### Filtro de las provincias
+```{r}
+distritos_ancash |>  
+  select(Provincia) |> 
+  mutate(Provincia = str_to_title(Provincia)) |> 
+  distinct() |> 
+  arrange(Provincia)
 ```
 
 ### Equiparamos los ubigeos
 ```{r}
 ubigeos = read_csv("https://raw.githubusercontent.com/JairAlva/Data-Libre/main/Ubigeos/TB_UBIGEOS.csv")
 
-ubigeos = ubigeos %>% select(ubigeo_reniec, ubigeo_inei, distrito)
+ubigeos = ubigeos |>  select(ubigeo_reniec, ubigeo_inei, distrito)
 
-distritos_huaraz = distritos_huaraz %>% 
-  left_join(ubigeos, by = c("UBIGEO" = "ubigeo_reniec")) %>% 
-  select(ubigeo_inei, distrito, everything() & !DISTRITO) 
+distritos_ancash = distritos_ancash |>  
+  left_join(ubigeos, by = c("UBIGEO" = "ubigeo_reniec")) |>  
+  mutate(distrito = str_to_title(distrito))
+```
+
+
+## Participación electoral
+```{r}
+distritos_ancash |> 
+  filter(Provincia == "Huaraz") |> 
+  ggplot() + geom_col(aes(x=reorder(distrito, +prc_participacion), 
+                          y= prc_participacion), fill = "pink") +
+  theme_classic() +
+  ylab("Porcentaje de participación") + xlab("Distrito") +
+  coord_flip()
 ```
 
 ## Mapa de la provincia de Huaraz

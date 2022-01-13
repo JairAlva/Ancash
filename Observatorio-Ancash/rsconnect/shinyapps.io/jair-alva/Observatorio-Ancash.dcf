@@ -1,0 +1,13 @@
+name: Observatorio-Ancash
+title: Observatorio-Ancash
+username:
+account: jair-alva
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5439164
+bundleId: 5466075
+url: https://jair-alva.shinyapps.io/Observatorio-Ancash/
+when: 1642109573.51682
+lastSyncTime: 1642109573.51682
+asMultiple: FALSE
+asStatic: FALSE
