@@ -72,3 +72,4 @@ tmap_last()
 #tmap_save(participacion, filename = "participacion.html")
 ```
 
+### Ahora hagamos un mapa de voto hacia Castillo
